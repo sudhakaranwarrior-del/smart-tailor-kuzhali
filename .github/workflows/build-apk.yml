@@ -1,1 +1,49 @@
+name: Build Smart Tailor (Kuzhali Tailoring) Debug & Release APKs
 
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x ./gradlew
+
+      - name: Run SQLite Schema & Unit Tests
+        run: |
+          python3 tests/run_verification_tests.py
+          ./gradlew testDebugUnitTest
+
+      - name: Build Debug APK (for immediate shop testing)
+        run: ./gradlew assembleDebug
+
+      - name: Build Release APK (for signing & production distribution)
+        run: ./gradlew assembleRelease
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartTailor-Kuzhali-Debug-APK
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartTailor-Kuzhali-Release-APK
+          path: app/build/outputs/apk/release/*.apk
